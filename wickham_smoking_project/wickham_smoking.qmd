@@ -1,0 +1,203 @@
+---
+title: "Smoking, Age, and Mortality: A Longitudinal Analysis of Whickham Data"
+format: 
+  html:
+    embed-resources: true
+---
+
+### Packages
+
+We'll use the **tidyverse** package for much of the data wrangling and visualization and the data lives in the **mosaicData** package.
+
+
+install.packages("mosaicData")
+
+You can load them by running the following in your Console:
+
+```{r}
+library(tidyverse) 
+library(mosaicData) 
+```
+
+
+
+## Solutions
+
+::: {#sol-1}
+
+This is an observational study, because the researchers recorded existing behaviors (like smoking) and outcomes (alive/dead) without assigning treatments or interventions. No random assignment occurred.
+
+:::  
+
+
+
+::: {#sol-2}
+
+```{r}
+nrow(Whickham)
+```
+
+The dataset contains 1314 rows, and each observation represents one individual in the study, recording their smoking status, age and outcome (alive or dead).
+
+
+:::
+
+
+
+::: {#sol-3}
+
+The dataset contains three variables: age (numerical), smoker (categorical nominal), and outcome (categorical nominal).
+
+```{r}
+#| label: hist-bar-uni
+
+# age: 
+ggplot(Whickham, aes(x = age)) +
+  geom_density(color = "blue", linewidth = 0.4, fill = "lightblue", alpha = 0.4) +
+  labs(
+    title = "Age Distribution of Participants",
+    x = "Age",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+# smoker: 
+ggplot(Whickham, aes(x = smoker, fill = smoker)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Smoking Status Distribution",
+    x = "Smoker",
+    y = "Count"
+  ) +
+  theme_minimal() 
+
+
+# outcome:  
+ggplot(Whickham, aes(x = outcome, fill = outcome)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Health Outcome After 20 Years",
+    x = "Outcome",
+    y = "Count",
+    fill = "Health Outcome"
+  ) +
+  theme_minimal() 
+
+```
+
+:::  
+
+
+
+
+::: {#sol-4}
+
+The expectation would be that smokers will have a higher proportion of deaths compared to non-smokers, since smoking is a known health risk.
+
+:::
+
+
+
+
+::: {#sol-5}
+
+We create a Filled Bar Chart.
+
+```{r}
+#| label: bar-filled
+Whickham |> 
+  ggplot(aes(x = smoker, fill = outcome)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Proportion of Health Outcomes by Smoking Status",
+    x = "Smoking Status",
+    y = "Proportion",
+    fill = "Health Outcome"
+  ) +
+  theme_minimal()
+
+```
+
+Description: From observing the proportion of outcomes within each smoking category, the data shows that smokers have a lower proportion of deaths and a higher proportion of survival compared to non-smokers.
+
+
+We compute the conditional probabilities, which further confirm that smokers have a lower proportion of deaths and a higher proportion of survival (around 8%), compared to non-smokers—contrasting with our initial expectation.
+
+```{r}
+Whickham |> 
+  select(smoker, outcome) |> 
+  table() |>
+  prop.table(margin = 1)
+```
+
+
+:::  
+
+
+
+
+::: {#sol-6}
+
+We need to introduce a new variable to Whickham, so we will need to use `mutate()`. 
+
+```{r}
+Whickham <- Whickham |> 
+  mutate(age_cat = case_when(
+    age <= 44 ~ "18-44",
+    age > 44 & age <= 64 ~ "45-64",
+    age > 64 ~ "65+"
+  ))
+
+head(Whickham)
+
+```
+
+:::
+
+
+::: {#sol-7}
+
+
+```{r}
+#| label: bar-filled-byage
+Whickham |> 
+  ggplot(aes(x = smoker, fill = outcome)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ age_cat) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Health Outcome by Smoking Status & Age",
+    x = "Smoking Status",
+    y = "Proportion",
+    fill = "Health Outcome"
+  ) +
+  theme_minimal()
+  
+```
+
+Faceting the plot by age_cat changes our initial interpretation: within each age group, smokers tend to have a higher proportion of deaths and a lower proportion of survival. The faceting helps reveal patterns that were previously masked by age differences in the overall population.
+
+:::  
+
+
+
+::: {#sol-8}
+
+
+```{r}
+Whickham |>
+  count(age_cat, smoker, outcome) |>
+  group_by(age_cat, smoker) |>
+  mutate(prop = n / sum(n))
+```
+
+These conditional proportions confirm the trend revealed by faceting: within each age group, smokers have a higher proportion of deaths and a lower proportion of survival than non-smokers. This contradicts the misleading initial interpretation from the aggregated data, which is mainly influenced by the greater number of older individuals among non-smokers.
+
+:::
+
+
+
+

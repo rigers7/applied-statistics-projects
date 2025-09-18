@@ -1,0 +1,20 @@
+### Tasks
+
+1. What type of study do you think this data comes from: observational or experimental? Why?
+  
+2. How many observations are there in this dataset? What does each observation represent?
+  
+3. How many variables are in this dataset? What type of variable is each? Display each variable with an appropriate visualization.
+
+4. What do you anticipate the relationship between smoking status and health outcome will be?
+  
+5. Create a visualization that shows the relationship between smoking status and health outcome. Briefly describe this relationship and assess whether it meets your expectations. Additionally, calculate the relevant conditional proportions to help your narrative.
+
+6. Refer to the help page for the case_when() function from the dplyr package. Apply the case_when() function to create a new variable named age_cat in Whickham using this scheme:
+  - `age <= 44 ~ "18-44"`
+- `age > 44 & age <= 64 ~ "45-64"`
+- `age > 64 ~ "65+"`
+
+7. Re-create the visualization showing the relationship between smoking status and health outcome, faceted by age_cat. What changed? What might explain this change?
+  
+8. Now use count() to calculate the conditional proportions from before, and this time break them down by age categories as well. Use this to support your narrative.

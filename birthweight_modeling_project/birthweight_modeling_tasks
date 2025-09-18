@@ -1,0 +1,29 @@
+### Tasks
+
+1. We start with some data processing:
+
+The goal is to create a prediction model, which can predict the birth weight before the birth of the child. Hence, we have to remove the variable low from the dataset.
+
+Convert the variable race into a factor variable with labels as specified above.
+
+Convert the variable smoke into a factor variable and choose appropriate labels for it.
+
+Convert the variable ht into a factor variable and choose appropriate labels for it.
+
+Convert the variable ui into a factor variable and choose appropriate labels for it.
+
+2. Visually explore the data to investigate the association between the response variable bwt and the other predictors by applying ggpairs() from the GGally package. Describe for each predictor its association with the response bwt. Which of these predictors seems most likely to be useful in predicting bwt?
+
+3. Fit a linear regression model to predict bwt using all other variables in the data, excluding low, which was already removed in Exercise 1. Save the fitted linear regression model in an object called model_full.
+
+Then run a hybrid stepwise selection algorithm. Start with a model, which contains only an intercept. Allow all other features to be added to the model. Call the fitted object model_step.
+
+4. Split the dataset into training a test part. Re-fit the models model_full and model_step to the training data.
+
+Compute the predicted birth weights for the test data using both models.
+
+Create a scatter plot with true bwt values from the test data on the x-axis and both predictions on the y-axis. Use geom_abline() to add a line to the graph where all “perfect” predictions would align. Describe the weight regions in which both models under-/overestimate the true bwt values.
+
+5. Use the computed predictions to calculate the root mean square error (RMSE) for both models. Based on the RMSE, which model do you prefer? Justify your choice. Additionally, interpret the RMSE you obtained for the preferred model.
+
+6. Conduct a 5-fold cross-validation to compare model_full and model_step, focusing on their RMSE values. State your preferred model and provide justification for your choice.

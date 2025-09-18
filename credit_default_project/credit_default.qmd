@@ -1,0 +1,271 @@
+---
+title: "Credit defaults and the bootstrap approach"
+format: 
+  html:
+    embed-resources: true
+---
+### Questions
+1. You are interested in the probability of a credit default.
+
+Choose a statistical model $(S, P_{\theta})$ for the random experiment of a credit default. The unknown population parameter $\theta$ should be the probability of a credit default.
+Use the observations contained in the variable default to compute a point estimate for the probability of a credit default.
+
+2. You are now interested in the sampling distribution of your point estimator for the probability of credit default.
+
+To approximate this sampling distribution, create a bootstrap distribution of your point estimator. Then, visualize it by drawing a histogram of the resampled point estimates. Use 1000 resamples to generate the bootstrap distribution.
+Use the 1000 resampled point estimatoes from i. to compute an estimate for the standard error of your point estimator.
+
+You realize that the probability of credit default varies among individuals in the population. People with different characteristics have varying probabilities of defaulting on credit. Therefore, you decide to use a logistic regression model to parametrize the probability of a credit default in the following way.
+
+3. Use the functions initial_split(), training() and testing() from tidymodels to split the sample into a 90% training and 10% test set. Make sure to set the seed equal to 123.
+
+Apply a forward stepwise selection algorithm. Fit a logistic regression model using only an intercept to predict default to the training set. Use this model as a null model in the forward stepwise selection algorithm. Define the scope as a formula including income, balance, student, and all possible pairwise interaction terms. Save the selected model as credit_fit.
+
+Write out the form of the fitted model and give an interpretation of one of the estimated slopes.
+
+Calculate the confusion matrix, sensitivity, and specificity for the predicted default values obtained by applying credit_fit to the test observations. Use a threshold of 0.5 to classify the predicted probabilities.
+
+4. Plot the ROC curve for the model credit_fit applied to the test set.
+
+Use the pROC::coords() function to find the optimal threshold based on Youden’s J statistic for the credit_fit model. Compare the resulting sensitivity and specificity values with those from the previous exercise.
+
+The remaining exercises focus on bootstrap resampling in a general context and do not refer to any specific data example. Suppose you have collected sample observations $x = (x_{1}, \ldots, x_{n})^{T}$. Let $x^{1} = (x^{1}_{1}, \ldots, x^{1}_{n})^{T}$ represent the first resample obtained by applying the bootstrap algorithm.
+
+5. 
+i.  What is the probability that the first bootstrap observation $x^{1}_{1}$ is not the j-th observation $x_{j}$ from the original sample? Explain your calculations.
+ii. What is the probability that the second bootstrap observation $x^{1}_{2}$ is not the j-th observation $x_{j}$ from the original sample? Explain your calculations.
+
+6.  Argue that $P(A^{c}_{j}) = \left(1 - \tfrac{1}{n}\right)^{n} \quad \text{where } A_{j}$ is the event that the j-th observation is part of the bootstrap sample.
+
+7.  Compute for n $\in \{5,100,10000\}$ the probability that the j-th observation is included in the bootstrap sample $x^{1}$?
+
+
+
+#### Packages
+
+We will use functions from the `tidyverse` and `tidymodels`.
+
+You will have to use the `step()` function from the `stats` package in one of the exercises. Since the `tidymodels` package includes a function named `step()`, which serves a different purpose, loading `tidymodels` will create a conflict with the `step()` function from the `stats` package. You therefore have to use the notation `stats::step()` to make sure that you use the correct step function.
+
+In addition, you will need the packages `infer` and `pROC`.
+
+```{r}
+#| label: load-packages
+library(tidyverse)
+library(tidymodels)
+library(infer)
+library(pROC)
+```
+
+## Solutions
+
+### Credit default data
+
+The data is in the file `credit.csv`, available in the Moodle folder titled **Data, Quarto, and R files - Sample solutions and previous problem sets**. It contains information on ten thousand customers. The included variables are:
+
+-   `default`: A variable indicating customer default status: TRUE or FALSE.
+
+-   `student`: A factor with values "No" and "Yes" indicating whether the customer is a student.
+
+-   `balance`: The average remaining credit card balance after monthly payment.
+
+-   `income`: Customer income.
+
+Save the Quarto template in a folder and create a subfolder named "data" within that folder. Save the CSV file in the subfolder and then use the following command to read the data.
+
+```{r}
+credit <- read_csv("data/credit_default_data.csv")
+```
+
+::: {#sol-1}
+i.  The random experiment of a credit default is modeled as a sequence of independent and identically distributed Bernoulli trials. Hence, the statistical model is given by 
+
+
+$$
+(\{0, 1\}^n, \mathbb{P}_\theta) \quad \text{with} \quad
+\mathbb{P}_\theta(\text{customer defaults in the } i\text{-th trial}) = \mathbb{P}_\theta(X_i = 1) = \theta
+$$
+
+ii. The point estimate for $\theta$ is 0.0333 since $\hat{\theta} = \bar{X} = \frac{1}{n}\sum_i X_i$ is the MLE.
+
+```{r}
+credit |> 
+   summarize(prob_default = mean(default == TRUE))
+```
+:::
+
+::: {#sol-2}
+i.  The bootstrap distribution
+
+```{r}
+set.seed(12345)
+
+x_sp <- credit |>
+  specify(response=default, success = "TRUE")
+
+bootstrap_means <- x_sp |>
+  generate(reps = 1000, type = "bootstrap") |>
+  calculate(stat = "prop")
+  
+visualize(bootstrap_means) +
+  geom_vline(xintercept = mean(credit$default == "TRUE"), color = "blue",
+linewidth = 2)
+```
+
+ii. The standard error of the point estimator is 0.0019
+
+```{r}
+bootstrap_means |>
+  summarize(se = sd(stat))
+```
+:::
+
+::: {.callout-note icon="false"}
+In the remaining exercises about the credit default data, you want / have to take all variables contained in `credit` into account.
+:::
+
+::: {#sol-3}
+i.  Create the training and test set.
+
+```{r}
+set.seed(123)
+credit_split <- initial_split(credit, prop=0.9)
+train <- training(credit_split)
+test <- testing(credit_split)
+
+```
+
+ii. Applying the forward step-wise selection algorithm leads to the best model which includes only balance and student.
+
+```{r}
+null_model <- glm(default ~ 1, data = train, family = binomial)
+
+scope_formula <- default ~ (income + balance + student)^2
+
+credit_fit <- stats::step(
+  object = null_model,
+  scope = scope_formula,
+  direction = "forward")
+```
+
+iii. The fitted model has the form: default \~ balance + student
+
+```{r}
+summary(credit_fit)
+```
+
+*Interpretation:*
+
+Being a student (compared to not being a student) decreases the log-odds of default by 0.7188, holding balance constant. In odds ratio terms: $e^{-0.7188} \approx 0.487$; thus, students have about 51.3% lower odds of defaulting than non-students, controlling for balance.
+
+iv. The confusion matrix is given by
+
+```{r}
+pred_default <- predict(credit_fit, newdata = test, type = "response")
+
+test_pred <- ifelse(pred_default > 0.5, TRUE, FALSE)
+
+conf_mat <- table(Predicted = test_pred, Actual = test$default)
+
+conf_mat
+```
+
+From the confusion matrix one can compute the sensitivity, and specificity values
+
+```{r}
+sensitivity <- conf_mat["TRUE", "TRUE"] / sum(conf_mat[, "TRUE"])
+specificity <- conf_mat["FALSE", "FALSE"] / sum(conf_mat[, "FALSE"])
+
+performance <- tibble(
+  threshold = 0.5,
+  sensitivity,
+  specificity 
+)
+
+performance
+```
+:::
+
+::: {#sol-4}
+i.  The ROC curve is shown in the following plot
+
+```{r}
+credit_roc <- suppressMessages(
+  roc(test$default, pred_default)
+)
+
+ggroc(credit_roc) +
+  annotate("segment", x = 1, xend = 0, y = 0, yend = 1,
+           color = "grey", linetype = "dashed")
+```
+
+ii. Using `coords()` gives the following values
+
+```{r}
+opt_coords <- coords(credit_roc, "best", best.method = "youden", ret = c("threshold", "sensitivity", "specificity"))
+
+opt_coords
+```
+
+Using the ROC-optimized threshold of 0.0165 leads to a much better balance between sensitivity and specificity. The model becomes substantially better at detecting defaulters while still maintaining high specificity.
+:::
+
+### Bootstrap
+
+------------------------------------------------------------------------
+
+::: {#sol-5}
+i.  The probability is equal to $${P}(x_1^1 \ne x_j) = 1 - \frac{1}{n}$$ due to each bootstrap draw being an independent random sample from the original n observations, each with probability $\frac{1}{n}$
+
+ii. The probability is equal to $${P}(x_2^1 \ne x_j) = 1 - \frac{1}{n}$$ since the second draw is also independent and identically distributed.
+:::
+
+::: {#sol-6}
+Let $A_{j,i}$ be the event that $x_j$ is chosen in the $i$-th draw. The probability of \textbf{not} selecting $x_j$ in a single draw — i.e., the complement of $A_{j,i}$ — is $P(A_{j,i}^c) = 1 - \frac{1}{n}$ (as shown also in the previous exercise). Because the $n$ draws are independent (due to sampling with replacement), the probability that $x_j$ is never selected in any of the $n$ draws — i.e., excluded entirely from the bootstrap sample — is $P\left(\bigcap_{i=1}^n A_{j,i}^c \right) = \left(1 - \frac{1}{n} \right)^n$
+
+
+:::
+
+::: {#sol-7}
+The probabilities are computed using R:
+
+```{r}
+
+n_values <- c(5, 100, 10000)
+
+calculate_probs <- function(n) {
+  1 - (1 - 1/n)^n
+}
+
+prob_values <- sapply(n_values, calculate_probs)
+
+data.frame(
+  n = n_values,
+  prob = prob_values
+)
+```
+:::
+
+::: {#sol-8}
+```{r}
+set.seed(123)
+x_indices <- 1:100
+j <- sample(x_indices, 1) # choose j
+j_included <- replicate(
+  10000, # number of replications
+  sum(
+    # compare bootstrap values with j
+    sample(x_indices, 100, replace = TRUE) == j 
+    ) 
+  # check if j is included at least once
+  > 0) 
+# proportion of times j is included in the resample
+mean(j_included) 
+```
+
+The simulated percentage of including j=`r j` when resampling numbers from $1,\dots, 100$ is 63.48%
+
+The simulation results closely match the theoretical probabilities. For considering the case $n\rightarrow \infty$ observe that the probability that a specific observation is included in a bootstrap sample of size n converges to about 63.2% as n grows large, rather than going to zero. This reflects the inherent property of bootstrap sampling with replacement, where each observation has a consistent chance of being selected at least once regardless of sample size.
+:::
+
+:::

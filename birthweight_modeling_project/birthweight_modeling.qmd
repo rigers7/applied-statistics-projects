@@ -1,0 +1,280 @@
+---
+title: "Predictors associated with infant birth weight"
+format: 
+  html:
+    embed-resources: true
+---
+
+#### Packages
+
+We will use functions from the `tidyverse` for data manipulation, visualization, and importing. For cross-validation, we will employ functions from `tidymodels`.
+
+You will have to use the `step()` function from the `stats` package 
+in one of the exercises. Since the `tidymodels` package includes a function named `step()`, which serves a different purpose, loading `tidymodels` will create a conflict with the `step()` function from the `stats` package. To avoid this issue, we will refrain from loading `tidymodels` until prior to the final exercise, as the conflict will no longer be a concern at that point.
+
+
+```{r}
+#| label: load-packages
+library(tidyverse)
+```
+
+
+
+### Data
+
+The data is in the file `birthweight.csv`, available in the Moodle folder titled __Data, Quarto, and R files - Sample solutions and previous problem sets__. The data contains the following variables:
+
++ `low`: indicator of birth weight less than 2.5 kg.
+
++ `age`: mother's age in years.
+
++ `lwt`: mother's weight in pounds at last menstrual period.
+
++ `race`: mother's race (1 = white, 2 = black, 3 = other).
+
++ `smoke`: smoking status during pregnancy.
+
++ `ptl`: number of previous premature labours.
+
++ `ht`: history of hypertension.
+
++ `ui`: presence of uterine irritability.
+
++ `ftv`: number of physician visits during the first trimester.
+
++ `bwt`: birth weight in grams.
+
+
+
+Save the Quarto template in a folder and create a subfolder named "data" within that folder. Save the CSV file in the subfolder and then use the following command to read the data.
+
+```{r}
+birthweight <- read_csv("data/birthweight.csv")
+```
+
+
+
+## Solutions
+ 
+
+::: {#sol-1}
+
+For the first task, we will use ...
+
+```{r}
+birthweight <- birthweight |> 
+  select(-low) |> 
+  mutate(
+    race = factor(race, levels = 1:3, labels = c("white", "black", "other")),
+    smoke = factor(smoke, levels = 0:1, labels = c("no", "yes")),
+    ht = factor(ht, levels = 0:1, labels = c("no", "yes")),
+    ui = factor(ui, levels = 0:1, labels = c("no", "yes"))
+  )
+```
+
+::: 
+
+
+
+
+
+::: {#sol-2}
+
+
+
+```{r}
+library(GGally)
+ggpairs(birthweight, progress = FALSE)
+```
+
+
+age: There seems to be no real association. The point cloud is rather circular, and the empirical correlation is close to zero.
+
+lwt: The scatterplot shows a slight positive association, which could be linear. This is confirmed by the empirical correlation value of 0.186.
+
+race: The median of bwt is slightly higher in the white group compared to the other two groups, but the difference is quite small. The variation in all three groups is comparable.
+
+smoke: The median of bwt is slightly higher for non-smoking mothers. The difference appears larger than that for race, although it remains relatively small. The variation in birth weight among both groups is comparable.
+
+ptl: The scatterplot shows a slight negative association, which could be linear. This is confirmed by the empirical correlation value of -0.155.
+
+ht: The median of bwt is somewhat higher for mothers without a history of hypertension. The difference seems to comparable to the one observed for smoke. The variation in birth weight among both groups is comparable.
+
+ui: The median of bwt is higher for mothers without uterine irritability. The difference seems to be the largest among all categorical predictors. The variation in birth weight among both groups is comparable.
+
+ftv: The scatterplot suggests a slight positive association, which may be linear. However, this impression could be influenced by only a few observations with high values of 4 or 6.
+
+It appears that the mother’s weight is the most helpful feature in predicting birth weight (shows the highest correlation with bwt among all numeric predictors). Additionally, ui may also assist in predicting birth weight. Therefore, mentioning either feature is equally valid.
+...
+:::  
+
+
+::: {#sol-3}
+
+We can fit the model using ...
+
+```{r}
+model_full <- lm(bwt ~ ., data = birthweight)
+```
+
+
+To run a stepwise selection algorithm we use `step()`. For the hybrid version we have to use `direction = ...`, 
+
+
+```{r}
+model_step <- stats::step(lm(bwt ~ 1, data = birthweight),
+                   direction = "both",
+                   scope = . ~ age + lwt + race + smoke + ptl + ht + ui + ftv)
+```
+
+:::  
+
+
+
+
+
+::: {#sol-4}
+
+First we re-fit the full and the step model to the training data:
+
+```{r}
+set.seed(111)
+train_idx <- sample(1:nrow(birthweight), floor(0.8 * nrow(birthweight)))
+train <- birthweight[train_idx,]
+test <- birthweight[-train_idx,]
+
+model_full_train <- lm(bwt ~ ., data = train)
+
+model_step_train <- lm(bwt ~ ui + race + smoke + ht + lwt, data = train)
+
+  
+```
+
+
+Given the two fitted model, we can compute predictions for the test data.
+
+```{r}
+
+pred_full <- predict(model_full_train, newdata = test)
+pred_step <- predict(model_step_train, newdata = test)
+  
+```
+
+
+Add a code chunk to create the scatterplot!
+```{r}
+
+df <- tibble(bwt = test$bwt, bwt_full = pred_full, bwt_step = pred_step)
+
+
+
+# 8. Plot true vs predicted birth weights for both models
+ggplot(df, aes(x = bwt)) +
+  geom_point(aes(y = pred_full), color = "orange", shape = 17, size = 2.2) +
+  geom_point(aes(y = pred_step), color = "brown", shape = 16, size = 2.2) +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(
+    x = "True Birth Weight",
+    y = "Predicted Birth Weight",
+    title = "Actual vs Predicted Birth Weight"
+  )
+```
+
+Both models tend to underestimate birth weights for heavier babies (>3500g) and overestimate birth weights for lighter babies (<2500g)howevery they perform most accurately for babies in the middle weight range (2500-3500g), with the stepwise model’s predictions being slightly closer to the true values overall.
+:::  
+
+
+
+
+::: {#sol-5}
+
+To compute the RMSE we can use ...
+
+```{r}
+rmse <- function(true, predicted) {
+  sqrt(mean((true - predicted)^2))
+}
+
+# Compute RMSE for both models
+rmse_full <- rmse(test$bwt, pred_full)
+rmse_step <- rmse(test$bwt, pred_step)
+
+cat("RMSE for Full Model:", round(rmse_full, 2), "\n")
+cat("RMSE for Stepwise Model:", round(rmse_step, 2), "\n")
+
+```
+
+The stepwise model is preferable since it has a lower RMSE compared to the full model. Although the difference is small, it suggests better generalization by removing irrelevant predictors and reducing overfitting. 
+
+The stepwise model's RMSE of 638.94 grams means that, on average, predictions deviate from actual birth weights by approximately 639 grams.
+
+
+
+
+:::  
+
+
+
+::: {#sol-6}
+
+
+To run a 5-fold CV, we have to define the model(s) using functions from `tidymodels`. So, we start with loading the package
+
+```{r}
+library(tidymodels)
+
+lin_mod <- 
+  linear_reg(engine = "lm")
+
+folds <- vfold_cv(birthweight, v = 5)
+
+wf <- 
+  workflow() |>
+  add_model(lin_mod) |>
+  add_formula(bwt ~ .)
+
+```
+
+
+Now we are ready to apply ...
+
+```{r}
+fit_full <- 
+  wf |> 
+  fit_resamples(folds)
+
+wf <- update_formula(wf, bwt ~ ui + race + smoke + ht + lwt)
+
+fit_step <- 
+  wf |> 
+  fit_resamples(folds)
+```
+
+
+
+Finally, we collect the metrics for both models:
+
+```{r}
+results <- bind_rows(
+  collect_metrics(fit_full) |> mutate(model = "Full"),
+  collect_metrics(fit_step) |> mutate(model = "Stepwise")
+)
+
+results |> select(model, .metric, mean)
+
+
+```
+The average RMSE for the full model is approximately 697, while the reduced model yields a value of 669. Both values are significantly larger than those computed in Exercise 5 for a single split. This indicates that the values obtained for the single split were overly optimistic.
+
+The smallest average RMSE is still achieved by the reduced model, making it our preferred model for predicting birth weight.
+
+
+
+:::
+
+
+
+
+
+
+

@@ -1,0 +1,355 @@
+---
+title: "Speeding on Interstate 5 and Blackjack"
+format: 
+  html:
+    embed-resources: true
+---
+### Questions
+
+1. What is the probability that passenger vehicles are traveling at speeds lower than 80 mph? How fast do the fastest 5% of passenger vehicles travel? The speed limit on this stretch of I-5 is 70 mph. Compute the probability for exceeding the speed limit.
+
+2. A highway patrol officer is hidden on the side of the freeway. What is the probability that 5 cars pass and none are speeding? Assume that the speeds of the cars are independent of each other.
+
+3. Now, assume that the speed limit was changed to 80 mph. What is the average number of cars a highway patrol officer needs to observe before spotting the first speeding car? Use the idea of Monte Carlo simulations to approximate the expected number of cars until the first instance of speeding is observed. Complete the given function template.
+
+4. Create a normal probability plot for the variable speed. Decide whether the sample could have been taken on Interstate 5. Justify your answer. If not, describe the shape of the distribution of speed.
+
+5. Complete the given code to write a function blackjack(). This function should take a deck, a set of tens, and a set of aces, and return TRUE if the two drawn cards form a blackjack, otherwise FALSE.
+
+6. Conduct a Monte Carlo simulation with B = 10,000 resamples to approximate the probability of achieving a blackjack.
+
+7. Compute the exact probability of having a blackjack, i.e., being dealt a total of 21 points with the first two cards.
+
+
+### Packages
+
+
+Loading the **tidyverse** package.
+```{r}
+library(tidyverse) 
+```
+
+
+
+
+::: {.remark} 
+
+You can use [TeX commands](https://www.overleaf.com/learn/latex/Mathematical_expressions) to write formulas in your solution, __if you want to__. Just be aware to use `$` to start an inline formula (instead of `\(`) and `$$` to create a centered formula (instead of `\[`).
+
+As an example, consider the case that the probability of the event $A$ is given as the product of the two probabilities $p,q\in [0,1]$:
+$$P(A) = p \cdot q.$$
+
+:::
+
+
+
+
+-------------
+
+-------------
+
+
+
+::: {#exm-}
+If there are two red beads and three blue beads in an urn, and you pick one randomly, what is the probability of choosing a red bead?
+
+
+```{r}
+red <- 2
+blue <- 3
+beads <- red + blue
+
+red/beads
+```
+
+This problem is easy to solve, and we can compute the probability analytically. But let's assume for a moment that this is not the case. 
+
+We are considering using a method called Monte Carlo simulation. The concept is to randomly sample from the probability model we are studying (for instance, picking a bead from an urn) and then repeat the experiment a sufficient number of times to make the results effectively equivalent to performing the experiment an infinite number of times (remember our frequentist interpretation of probability in Chapter 7.1.3).
+
+Random number generators allow us to simulate the process of random selection. An example is the `sample()` function in R.
+
+```{r}
+urn <- rep(c("red", "blue"), times = c(2,3))
+urn
+
+```
+
+Now we use `sample()` to pick a bead at random:
+
+```{r}
+sample(urn, 1)
+```
+
+To perform our first Monte Carlo simulation, we use the replicate() function, which permits us to repeat the same task any number of times. Here, we repeat the random event B = 10000 times.
+
+
+```{r}
+B <- 10000
+events <- replicate(B, sample(urn, 1))
+```
+
+The proportion of red beads in `events` is then the Monte Carlo approximation of the probability $\frac{2}{5}=0.4$.
+
+```{r}
+events |> 
+  table() |> 
+  prop.table()
+```
+
+:::
+
+
+
+
+::: {.remark} 
+The `replicate()` function allows us to repeatedly evaluate an input function (in the example, it was `sample()`) in a nice and easy way.
+
+```{r}
+affine_func <- function(x = 1, slope = 1, intercept = 0){
+  y <- intercept + slope * x
+  return(y)
+}
+
+affine_func(2, 2, 0)
+affine_func() # default values for three arguments
+```
+
+:::
+
+-------------
+
+-------------
+
+
+## Solutions
+
+
+### Speeding on Interstate 5
+
+-------------
+
+
+
+A study investigated the distribution of passenger vehicle speeds traveling on the [Interstate 5 Freeway](https://en.wikipedia.org/wiki/Interstate_5) (I-5) in California. They discovered that the __distribution is nearly normal__ with a __mean of 72.6 miles/hour__ and a __standard deviation of 4.78 miles/hour__.
+
+
+
+  
+
+::: {#sol-1}
+
+
+i.  The speed of passenger vehicles follows a normal distribution, with a mean of 72.6 and a standard deviation of 4.78. Therefore, the probability is given by:
+    ```{r}
+    pnorm(80, mean = 72.6, sd = 4.78)
+    ```
+
+i.  The fastest 5% corresponds to the the upper 5% tail, i.e. speeds above the 95th quantile (~80.46 mph).
+
+    ```{r}
+    qnorm(0.95, mean = 72.6, sd = 4.78)
+    ```
+
+
+i.  We want to calculate the probability of traveling at a speed greater than 70 miles per hour.
+```{r}
+P_speeding <- 1 - pnorm(70, mean = 72.6, sd = 4.78)
+P_speeding
+```
+    
+    
+:::
+
+
+
+
+::: {#sol-2}
+
+The officer is watching five Bernoulli trials (speeding yes/no) and counts the number of successes (car is speeding). 
+
+The probability for the event that all five cars passing by are not speeding is then given by 
+
+$$
+(1 - \mathrm{P\_speeding})^5 = (1 - 0.7067562)^5 = 0.002168423
+$$
+
+:::
+
+
+
+::: {#sol-3}
+
+
+
+```{r}
+first_speeding <- function(){
+  count <- NULL              # initialize the counting of cars
+  while(sum(count) == 0){    # loop over the next command until the sum is not 
+                             # equal to 0 anymore  
+    count <- 
+      c(count,
+        ifelse(
+          rnorm(1, mean = 72.6, sd = 4.78) > 80, # simulate speed of car and check if it is speeding 
+          1,                 # new value in the case of speeding 
+          0))                # new value if the car is not speeding
+  }
+  return(length(count)) # number of observed cars
+}
+```
+
+
+After setting the seed, we can use `replicate()` to simulate values from the function `first_speeding()` multiple times. 
+
+```{r}
+set.seed(1)
+B <- 10000
+num_cars_first_speeding <- replicate(B, first_speeding())
+mean(num_cars_first_speeding)
+```
+
+:::
+
+
+
+
+::: {#sol-4}
+
+
+```{r}
+
+speed_data <- read_csv("data/speed_data.csv")
+```
+
+
+The normal probability plot is created using the functions ...
+
+```{r}
+ggplot(speed_data, aes(sample = speed)) +
+  stat_qq(color = "black", size = 2, alpha = 0.6) +
+  stat_qq_line(color = "orange", linetype = "dashed", size = 1) +
+  labs(
+    title = "Normal Q-Q Plot of Vehicle Speeds",
+    x = "Theoretical Quantiles",
+    y = "Sample Speeds"
+  ) +
+  theme_minimal()
+```
+
+
+In the plot we see that while most vehicle speeds align with a normal distribution, the upper tail deviates significantly, indicating unusually high speeds. These extreme values are inconsistent with the expected normal distribution for Interstate 5 (mean 72.6, SD 4.78). Therefore, the data likely was not collected on Interstate 5 and instead suggests a right-skewed distribution.
+
+:::
+
+
+### Blackjack
+
+-------------
+
+
+Let's play a round of [blackjack](https://en.wikipedia.org/wiki/Blackjack). The object of the game is to win money by creating card totals higher than those of the dealer's hand but not exceeding 21, or by stopping at a total in the hope that the dealer will bust. Number cards count as their number, the jack, queen, and king ("face cards") count as 10, and aces count as either 1 or 11 depending on whether or not counting it as 11 would cause a bust. If a player exceeds 21 points, they bust and automatically lose. A total of 21 on the starting two cards is called a "__blackjack__," and is the strongest hand.
+
+
+
+In a first step, we want to approximate the probability of having a __blackjack__, i.e., having with the first two cards a total of 21 points, by using the idea of a Monte Carlo simulations.
+
+To do so, we need a full card deck. To create one, we can use the following commands.
+
+
+```{r}
+suits <- c("Diamonds", "Clubs", "Hearts", "Spades")
+numbers <- c("Ace", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", 
+             "Ten", "Jack", "Queen", "King")
+
+deck <- expand_grid(numbers, suits) |> 
+  unite("card")
+
+deck
+```
+
+
+One can randomly draw two cards from this deck with the following command.
+
+```{r}
+deck |> 
+    slice_sample(n=2) 
+```
+
+
+To determine if the obtained cards form a blackjack, we need to check if one is a face card or a ten
+
+```{r}
+tens <- expand_grid(c("King", "Queen", "Jack", "Ten"), suits) |> 
+  unite("card")
+tens$card
+```
+
+and the other is an ace.
+
+```{r}
+aces <- paste0("Ace_", suits)
+aces
+```
+
+
+
+
+::: {#sol-5}
+
+The function template has two missing parts that need to be addressed. The first one is about determining the values of the sampled cards. We need to assign a value of 11 to all aces and 10 to all face cards and the tens.    
+The second missing part is about deciding if the observed values are equal to 21 or not.
+
+```{r}
+blackjack <- function(Deck, Tens, Aces){
+  result <- Deck |> 
+    slice_sample(n=2) |> 
+    mutate(value = case_when(
+      card %in% Aces ~ 11,
+      card %in% Tens$card ~ 10,
+      grepl("Two", card) ~ 2,
+      grepl("Three", card) ~ 3,
+      grepl("Four", card) ~ 4,
+      grepl("Five", card) ~ 5,
+      grepl("Six", card) ~ 6,
+      grepl("Seven", card) ~ 7,
+      grepl("Eight", card) ~ 8,
+      grepl("Nine", card) ~ 9
+    ))|>                          # two sampled cards
+    summarise(n = sum(value)) |>  # sum the two values
+    summarise(n == 21) |>         # check if the sum is equal to 21
+    pull()                        # remove tibble structure to obtain only
+                                  # a logical value as return value   
+  return(result)
+}
+```
+
+:::  
+
+
+
+::: {#sol-6}
+
+```{r}
+set.seed(1)
+B <- 10000
+blackjack_results <- replicate(B, blackjack(deck, tens, aces))
+mean(blackjack_results)
+
+```
+
+:::  
+
+
+::: {#sol-7}
+
+The event $A=\{\text{having a blackjack}\}$ is the union of drawing an Ace first and then a ten-value card, and drawing a ten-value card first and then an Ace.
+
+The probability of having a blackjack is then equal to
+$$
+P(A) = \frac{4}{52} \cdot \frac{16}{51} + \frac{16}{52} \cdot \frac{4}{51} = \frac{128}{2652} \approx 0.0483
+$$
+The simulated probability of a blackjack, approximately 0.0483 as calculated in Exercise 6, matches the theoretical probability derived in Exercise 7, thereby validating the simulation results.
+:::  
+
+
+
+

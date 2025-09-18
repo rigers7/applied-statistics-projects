@@ -1,0 +1,15 @@
+### Tasks
+
+1. What is the probability that passenger vehicles are traveling at speeds lower than 80 mph? How fast do the fastest 5% of passenger vehicles travel? The speed limit on this stretch of I-5 is 70 mph. Compute the probability for exceeding the speed limit.
+
+2. A highway patrol officer is hidden on the side of the freeway. What is the probability that 5 cars pass and none are speeding? Assume that the speeds of the cars are independent of each other.
+
+3. Now, assume that the speed limit was changed to 80 mph. What is the average number of cars a highway patrol officer needs to observe before spotting the first speeding car? Use the idea of Monte Carlo simulations to approximate the expected number of cars until the first instance of speeding is observed. Complete the given function template.
+
+4. Create a normal probability plot for the variable speed. Decide whether the sample could have been taken on Interstate 5. Justify your answer. If not, describe the shape of the distribution of speed.
+
+5. Complete the given code to write a function blackjack(). This function should take a deck, a set of tens, and a set of aces, and return TRUE if the two drawn cards form a blackjack, otherwise FALSE.
+
+6. Conduct a Monte Carlo simulation with B = 10,000 resamples to approximate the probability of achieving a blackjack.
+
+7. Compute the exact probability of having a blackjack, i.e., being dealt a total of 21 points with the first two cards.
