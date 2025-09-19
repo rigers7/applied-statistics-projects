@@ -1,26 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Projects</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Statistics Projects Reports</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 50px 20px;
+    }
+
+    h1 {
+      margin-bottom: 40px;
+      text-align: center;
+      color: #333;
+    }
+
+    .projects-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      max-width: 1000px;
+    }
+
+    .project-card {
+      background-color: #f1f1f1;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      text-decoration: none;
+      transition: all 0.2s ease-in-out;
+      width: 220px;
+    }
+
+    .project-card:hover {
+      background-color: #e0e0e0;
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+  </style>
 </head>
-<body class="bg-gray-50 flex flex-col items-center justify-center min-h-screen">
-  <h1 class="text-4xl font-bold mb-8">My Statistics & Data Science Projects</h1>
-  <div class="grid gap-4">
-    <a href="birthweight_modeling.html" class="block p-6 bg-gray-100 rounded-xl shadow-lg hover:bg-gray-200 transition">
-      Birthweight Modeling
-    </a>
-    <a href="credit_default.html" class="block p-6 bg-gray-100 rounded-xl shadow-lg hover:bg-gray-200 transition">
-      Credit Default Analysis
-    </a>
-    <a href="montecarlo_simulation.html" class="block p-6 bg-gray-100 rounded-xl shadow-lg hover:bg-gray-200 transition">
-      Monte Carlo Simulation
-    </a>
-    <a href="wickham_smoking.html" class="block p-6 bg-gray-100 rounded-xl shadow-lg hover:bg-gray-200 transition">
-      Whickham Smoking Analysis
-    </a>
+<body>
+  <h1>Statistics Projects Reports</h1>
+  <div class="projects-container">
+    <a class="project-card" href="reports/birthweight_modeling.html">Birthweight Modeling</a>
+    <a class="project-card" href="reports/credit_default.html">Credit Default</a>
+    <a class="project-card" href="reports/montecarlo_simulation.html">Monte Carlo Simulation</a>
+    <a class="project-card" href="reports/wickham_smoking.html">Wickham Smoking Analysis</a>
   </div>
 </body>
 </html>
