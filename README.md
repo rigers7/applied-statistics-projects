@@ -1,4 +1,4 @@
-# Statistics Projects - TUM Data Science & Statistical Thinking
+# Applied Statistics Projects - TUM Data Science & Statistical Thinking
 
 This repository showcases statistics and data science projects I completed as part of the **Data Science and Statistical Thinking** course at **TUM**.
 These projects allowed me to gain hands-on experience in **data manipulation, visualization, statistical modeling, and predictive analysis** using R and Quarto (`.qmd`).  
