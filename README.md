@@ -17,7 +17,7 @@ These projects allowed me to gain hands-on experience in **data manipulation, vi
 ## Repository Structure
 
 - Each project folder contains the **Quarto source files (`.qmd`)**, datasets, and tasks.  
-- The **rendered HTML reports** are in the `docs/` folder, which can be viewed interactively here https://rigers7.github.io/applied-statistics-projects/
+- The **rendered HTML reports** are in the `docs/` folder, which can be viewed interactively via Github Pages.
 
 ---
 
